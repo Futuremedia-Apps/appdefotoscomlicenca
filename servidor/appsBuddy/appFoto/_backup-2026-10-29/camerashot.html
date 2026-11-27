@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veja a sua foto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            padding-top: 20px;
+        }
+        
+        .image-container {
+            width: 100%;
+            height: 70vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        #display-image {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 150px;
+            color: white;
+        }
+        
+        .share-btn {
+            background-color: #4285F4;
+        }
+        
+        .download-btn {
+            background-color: #009688;
+        }
+        
+        .error-message {
+            text-align: center;
+            color: #e74c3c;
+            margin: 20px 0;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #fde2e2;
+            border-radius: 5px;
+        }
+
+        .debug-info {
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        /* Estilo para toast de status */
+        .toast-message {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            max-width: 80%;
+            text-align: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Veja a sua foto</h1>
+        
+        <div class="image-container" id="image-container">
+            <!-- A imagem será inserida aqui via JavaScript -->
+        </div>
+        
+        <div class="button-container">
+            <button class="btn share-btn" id="share-btn">Compartilhar</button>
+            <button class="btn download-btn" id="download-btn">Download</button>
+        </div>
+    </div>
+
+    <script>
+        // Função para adicionar mensagens de debug
+        function addDebug(message) {
+            // Função mantida por compatibilidade, mas não faz nada
+            console.log(message);
+        }
+
+        // Função para mostrar toast de mensagem
+        function showToast(message, duration = 3000) {
+            // Remover toast existente se houver
+            const existingToast = document.querySelector('.toast-message');
+            if (existingToast) {
+                document.body.removeChild(existingToast);
+            }
+            
+            // Criar novo toast
+            const toast = document.createElement('div');
+            toast.className = 'toast-message';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Mostrar com fade in
+            setTimeout(() => {
+                toast.style.opacity = 1;
+            }, 10);
+            
+            // Esconder após o tempo definido
+            setTimeout(() => {
+                toast.style.opacity = 0;
+                
+                // Remover elemento após fade out
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        // Função para obter parâmetros da URL
+        function getParameterByName(name) {
+            const url = window.location.href;
+            name = name.replace(/[\[\]]/g, '\\$&');
+            const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+            const results = regex.exec(url);
+            
+            if (!results) return null;
+            if (!results[2]) return '';
+            
+            const value = decodeURIComponent(results[2].replace(/\+/g, ' '));
+            addDebug('Parâmetro encontrado: ' + name + '=' + value);
+            return value;
+        }
+
+        // Função para carregar a imagem
+        function loadImage(imageUrl) {
+            addDebug('Tentando carregar imagem: ' + imageUrl);
+            
+            const container = document.getElementById('image-container');
+            const img = document.createElement('img');
+            img.id = 'display-image';
+            
+            img.onload = function() {
+                addDebug('Imagem carregada com sucesso!');
+                addDebug('Dimensões: ' + this.naturalWidth + 'x' + this.naturalHeight);
+                document.title = 'Visualizando: ' + imageUrl.split('/').pop();
+            };
+            
+            img.onerror = function() {
+                addDebug('ERRO: Falha ao carregar a imagem');
+                container.innerHTML = '<div class="error-message">Não foi possível carregar a imagem.<br>Verifique se o URL está correto e acessível.</div>';
+            };
+            
+            img.src = imageUrl;
+            img.alt = 'Imagem carregada';
+            container.appendChild(img);
+        }
+
+        // Configurar o botão de compartilhamento - foco exclusivo no compartilhamento da imagem
+        function setupShareButton(imageUrl) {
+            const shareBtn = document.getElementById('share-btn');
+            
+            shareBtn.addEventListener('click', async function() {
+                // Verificar se Web Share API está disponível
+                if (!navigator.share) {
+                    showToast("Seu navegador não suporta compartilhamento. Tente salvar a imagem e compartilhar manualmente.");
+                    return;
+                }
+                
+                // Mostrar feedback enquanto processa
+                showToast("Preparando imagem...");
+                
+                // MÉTODO 1: Compartilhar diretamente a partir da URL da imagem
+                // Este é o método principal e mais direto
+                try {
+                    // Obter a imagem como blob usando fetch com opções para evitar problemas de CORS
+                    const response = await fetch(imageUrl, {
+                        cache: 'no-cache',
+                        mode: 'cors',
+                        credentials: 'omit' // Evita enviar cookies - melhor para imagens públicas
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP! Status: ${response.status}`);
+                    }
+                    
+                    const blob = await response.blob();
+                    
+                    // Determinar o tipo de arquivo correto com base no blob ou URL
+                    let fileType = blob.type;
+                    if (!fileType || fileType === 'application/octet-stream') {
+                        // Tentar determinar pelo URL se o tipo não for detectado
+                        const extension = imageUrl.split('.').pop().toLowerCase();
+                        if (extension === 'jpg' || extension === 'jpeg') fileType = 'image/jpeg';
+                        else if (extension === 'png') fileType = 'image/png';
+                        else if (extension === 'gif') fileType = 'image/gif';
+                        else if (extension === 'webp') fileType = 'image/webp';
+                        else fileType = 'image/jpeg'; // Fallback para JPEG
+                    }
+                    
+                    // Determinar nome de arquivo baseado no URL
+                    let fileName = imageUrl.split('/').pop() || 'image';
+                    if (!fileName.includes('.')) {
+                        fileName += '.jpg'; // Adicionar extensão se não tiver
+                    }
+                    
+                    // Criar arquivo com metadados corretos
+                    const file = new File([blob], fileName, { 
+                        type: fileType,
+                        lastModified: new Date().getTime()
+                    });
+                    
+                    // Verificar se o navegador suporta compartilhamento de arquivos
+                    // IMPORTANTE: Usamos apenas files, sem URL ou texto
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file]
+                            // Não incluímos título ou texto para focar apenas na imagem
+                        });
+                        console.log('Imagem compartilhada com sucesso via método direto');
+                        return;
+                    } else {
+                        throw new Error('Este navegador não suporta compartilhamento de arquivos');
+                    }
+                } catch (error) {
+                    console.error('Método 1 (direto) falhou:', error);
+                    // Se falhar, vamos para o método 2
+                }
+                
+                // MÉTODO 2: Usar canvas para capturar a imagem do DOM
+                try {
+                    const img = document.getElementById('display-image');
+                    if (!img || !img.complete || img.naturalWidth === 0) {
+                        throw new Error('Imagem não está pronta ou não foi carregada');
+                    }
+                    
+                    // Criar canvas com o tamanho exato da imagem
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    
+                    // Desenhar a imagem no canvas
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Converter para blob com alta qualidade
+                    const blob = await new Promise((resolve, reject) => {
+                        canvas.toBlob(
+                            (blob) => blob ? resolve(blob) : reject(new Error('Falha ao criar blob')),
+                            'image/jpeg', 
+                            0.95 // Alta qualidade
+                        );
+                    });
+                    
+                    // Criar arquivo a partir do blob
+                    const file = new File([blob], 'imagem.jpg', { 
+                        type: 'image/jpeg',
+                        lastModified: new Date().getTime()
+                    });
+                    
+                    // Compartilhar apenas o arquivo, sem URL ou texto
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file]
+                            // Não incluímos título ou texto para focar apenas na imagem
+                        });
+                        console.log('Imagem compartilhada com sucesso via canvas');
+                    } else {
+                        throw new Error('Compartilhamento de arquivos não suportado');
+                    }
+                } catch (error) {
+                    console.error('Método 2 (canvas) falhou:', error);
+                    showToast("Não foi possível compartilhar a imagem. Tente salvar e compartilhar manualmente.");
+                }
+            });
+        }
+
+        // Configurar o botão de download
+        function setupDownloadButton(imageUrl) {
+            const downloadBtn = document.getElementById('download-btn');
+            
+            downloadBtn.addEventListener('click', async function() {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const isAndroid = /android/i.test(navigator.userAgent);
+                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    if (isIOS) {
+                        // Para iOS, mostrar instruções sem abrir nova janela
+                        showIOSInstructions();
+                    } else if (isAndroid) {
+                        // Para Android, fazer download direto sem compartilhamento
+                        try {
+                            showToast("Baixando imagem...");
+                            
+                            // Baixar a imagem como blob
+                            const response = await fetch(imageUrl);
+                            const blob = await response.blob();
+                            
+                            // Fazer download direto
+                            downloadImageAndroid(blob);
+                            
+                            showToast("Download iniciado!");
+                        } catch (error) {
+                            console.error('Erro ao preparar imagem para download:', error);
+                            showToast("Erro ao baixar. Tente novamente.");
+                            // Método alternativo
+                            downloadImageAndroid(null);
+                        }
+                    }
+                } else {
+                    // Em desktop, criar um link de download direto
+                    const link = document.createElement('a');
+                    link.href = imageUrl;
+                    link.download = imageUrl.split('/').pop() || 'imagem.jpg';
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                
+                // Função para mostrar instruções de download no iOS
+                function showIOSInstructions() {
+                    // Criar o modal de instruções
+                    const modalOverlay = document.createElement('div');
+                    modalOverlay.style.position = 'fixed';
+                    modalOverlay.style.top = '0';
+                    modalOverlay.style.left = '0';
+                    modalOverlay.style.width = '100%';
+                    modalOverlay.style.height = '100%';
+                    modalOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                    modalOverlay.style.display = 'flex';
+                    modalOverlay.style.justifyContent = 'center';
+                    modalOverlay.style.alignItems = 'center';
+                    modalOverlay.style.zIndex = '1000';
+                    
+                    const modalContent = document.createElement('div');
+                    modalContent.style.backgroundColor = 'white';
+                    modalContent.style.padding = '20px';
+                    modalContent.style.borderRadius = '10px';
+                    modalContent.style.maxWidth = '90%';
+                    modalContent.style.width = '350px';
+                    modalContent.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                    
+                    modalContent.innerHTML = `
+                        <h3 style="margin-top: 0; margin-bottom: 15px; color: #333;">Como salvar no iOS</h3>
+                        <ol style="padding-left: 20px; margin-bottom: 20px;">
+                            <li style="margin-bottom: 8px;">Pressione e mantenha o dedo sobre a imagem</li>
+                            <li style="margin-bottom: 8px;">No menu que aparecer, selecione "Salvar no App Fotos"</li>
+                            <li>A imagem será salva em sua galeria</li>
+                        </ol>
+                        <button id="close-modal" style="display: block; width: 100%; padding: 10px; background-color: #009688; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">Entendi</button>
+                    `;
+                    
+                    modalOverlay.appendChild(modalContent);
+                    document.body.appendChild(modalOverlay);
+                    
+                    // Adicionar evento para fechar o modal
+                    document.getElementById('close-modal').addEventListener('click', function() {
+                        document.body.removeChild(modalOverlay);
+                    });
+                }
+                
+                // Função alternativa para download no Android
+                function downloadImageAndroid(blob) {
+                    if (blob) {
+                        // Usar o objeto URL para criar uma URL temporária
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        // Criar o link de download com nome mais descritivo
+                        const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_');
+                        const fileName = `imagem_${timestamp}.jpg`;
+                        
+                        const link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.download = fileName;
+                        link.style.display = 'none';
+                        
+                        // Adicionar à página e clicar
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        // Limpar recursos
+                        setTimeout(() => {
+                            if (document.body.contains(link)) {
+                                document.body.removeChild(link);
+                            }
+                            URL.revokeObjectURL(blobUrl);
+                        }, 100);
+                        
+                        console.log('Download iniciado:', fileName);
+                    } else {
+                        // Se não tiver blob, tentar diretamente com a URL
+                        const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_');
+                        const fileName = imageUrl.split('/').pop() || `imagem_${timestamp}.jpg`;
+                        
+                        const link = document.createElement('a');
+                        link.href = imageUrl;
+                        link.download = fileName;
+                        link.style.display = 'none';
+                        link.target = '_blank'; // Abrir em nova aba como fallback
+                        
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        setTimeout(() => {
+                            if (document.body.contains(link)) {
+                                document.body.removeChild(link);
+                            }
+                        }, 100);
+                        
+                        console.log('Download direto iniciado:', fileName);
+                    }
+                }
+            });
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            addDebug('Página carregada. Buscando parâmetros da URL...');
+            addDebug('URL atual: ' + window.location.href);
+            
+            // Obter o parâmetro 'imagem' da URL
+            const imageUrl = getParameterByName('imagem');
+            
+            if (imageUrl) {
+                loadImage(imageUrl);
+                setupShareButton(imageUrl);
+                setupDownloadButton(imageUrl);
+            } else {
+                addDebug('ERRO: Nenhum parâmetro de imagem encontrado');
+                const container = document.getElementById('image-container');
+                container.innerHTML = `
+                    <div class="error-message">
+                        <p>Nenhuma imagem especificada.</p>
+                        <p>Use o parâmetro "imagem" na URL.</p>
+                        <p>Exemplo: <code>?imagem=https://exemplo.com/imagem.jpg</code></p>
+                    </div>
+                `;
+                
+                // Desativar os botões
+                document.getElementById('share-btn').disabled = true;
+                document.getElementById('download-btn').disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

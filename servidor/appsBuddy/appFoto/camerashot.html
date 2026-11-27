@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realize o seu cadastro para acessar a sua foto</title>
+    <style>
+        :root {
+            --bg: #edf2ef;
+            --text: #16211d;
+            --muted: #5f6f68;
+            --line: #d6ded8;
+            --accent: #00856f;
+            --accent-dark: #006b59;
+            --surface: #ffffff;
+            --danger: #b42318;
+            --shadow: 0 18px 50px rgba(22, 33, 29, 0.13);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        html {
+            min-height: 100%;
+        }
+        
+        body {
+            min-height: 100vh;
+            min-height: 100svh;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(237, 242, 239, 0) 46%),
+                var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            width: min(1080px, calc(100% - 24px));
+            height: 100vh;
+            height: 100svh;
+            min-height: 100vh;
+            min-height: 100svh;
+            margin: 0 auto;
+            padding: clamp(12px, 2.4vw, 24px) 0 calc(clamp(12px, 2.4vw, 24px) + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+        
+        h1 {
+            text-align: center;
+            color: var(--text);
+            font-size: clamp(22px, 4vw, 38px);
+            line-height: 1.08;
+            letter-spacing: 0;
+            flex: 0 0 auto;
+        }
+        
+        .image-container {
+            width: 100%;
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--surface);
+            border: 1px solid rgba(214, 222, 216, 0.9);
+            border-radius: 8px;
+            padding: clamp(8px, 2vw, 14px);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .image-container.lead-mode {
+            /* Formularios longos rolam dentro do quadro em vez de serem cortados. */
+            align-items: flex-start;
+            justify-content: flex-start;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: clamp(16px, 4vw, 28px);
+            background:
+                linear-gradient(135deg, rgba(0, 133, 111, 0.08), rgba(255, 255, 255, 0.2)),
+                var(--surface);
+        }
+        
+        #display-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+        
+        .button-container {
+            flex: 0 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 180px));
+            justify-content: center;
+            gap: 12px;
+            margin-top: 0;
+        }
+
+        .button-container[hidden] {
+            display: none;
+        }
+
+        .button-container.no-whatsapp {
+            grid-template-columns: repeat(2, minmax(0, 180px));
+        }
+        
+        .btn {
+            min-height: 50px;
+            padding: 0 22px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 180px;
+            color: white;
+            transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .share-btn {
+            background-color: var(--accent);
+            box-shadow: 0 10px 24px rgba(0, 133, 111, 0.24);
+        }
+
+        .share-btn:hover {
+            background-color: var(--accent-dark);
+        }
+        
+        .download-btn {
+            background-color: #22332d;
+            box-shadow: 0 10px 24px rgba(34, 51, 45, 0.18);
+        }
+
+        .whatsapp-btn {
+            background-color: #25d366;
+            box-shadow: 0 10px 24px rgba(37, 211, 102, 0.22);
+        }
+
+        .whatsapp-btn[hidden] {
+            display: none;
+        }
+
+        .whatsapp-btn:hover {
+            background-color: #1faa52;
+        }
+
+        .whatsapp-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(13, 20, 17, 0.58);
+        }
+
+        .whatsapp-modal[hidden] {
+            display: none;
+        }
+
+        .whatsapp-dialog {
+            width: min(420px, 100%);
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 24px 60px rgba(13, 20, 17, 0.28);
+        }
+
+        .whatsapp-dialog h2 {
+            margin-bottom: 10px;
+            color: var(--text);
+            font-size: clamp(22px, 4vw, 28px);
+            line-height: 1.1;
+        }
+
+        .whatsapp-dialog p {
+            margin-bottom: 16px;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .whatsapp-dialog label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .whatsapp-dialog input {
+            width: 100%;
+            height: 48px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 0 12px;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .whatsapp-dialog input:focus {
+            outline: 3px solid rgba(37, 211, 102, 0.18);
+            border-color: #25d366;
+        }
+
+        .phone-preview {
+            min-height: 20px;
+            margin-bottom: 14px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .whatsapp-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .whatsapp-actions button {
+            min-height: 46px;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .whatsapp-actions button:disabled {
+            cursor: progress;
+            opacity: 0.75;
+        }
+
+        .whatsapp-submit {
+            background: #25d366;
+        }
+
+        .whatsapp-cancel {
+            background: #22332d;
+        }
+
+        .whatsapp-error {
+            display: none;
+            margin-top: 12px;
+            color: var(--danger);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .lead-gate {
+            width: min(420px, 100%);
+            margin: auto;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 18px 44px rgba(22, 33, 29, 0.14);
+            text-align: left;
+        }
+
+        .lead-gate h2 {
+            margin-bottom: 10px;
+            color: var(--text);
+            font-size: clamp(22px, 4vw, 28px);
+            line-height: 1.1;
+        }
+
+        .lead-gate p {
+            margin-bottom: 18px;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .lead-field {
+            margin-bottom: 12px;
+        }
+
+        .lead-field label {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .lead-field small {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .lead-gate input,
+        .lead-gate select {
+            width: 100%;
+            height: 46px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 0 12px;
+            background-color: #fff;
+            color: var(--text);
+            font-size: 16px;
+        }
+
+        .lead-gate input:focus,
+        .lead-gate select:focus {
+            outline: 3px solid rgba(0, 133, 111, 0.16);
+            border-color: var(--accent);
+        }
+
+        .lead-gate button {
+            width: 100%;
+            min-height: 46px;
+            border: none;
+            border-radius: 6px;
+            background: var(--accent);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .lead-gate button:disabled {
+            cursor: progress;
+            opacity: 0.75;
+        }
+
+        .choice-actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .lead-gate .secondary-btn {
+            background: #22332d;
+        }
+
+        .choice-note {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .lead-error {
+            display: none;
+            margin-top: 12px;
+            color: var(--danger);
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .error-message {
+            text-align: center;
+            color: var(--danger);
+            margin: 20px 0;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #fde2e2;
+            border-radius: 5px;
+        }
+
+        .debug-info {
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        /* Estilo para toast de status */
+        .toast-message {
+            position: fixed;
+            bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            max-width: 80%;
+            text-align: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .toast-message.whatsapp-status {
+            top: calc(18px + env(safe-area-inset-top, 0px));
+            bottom: auto;
+            width: min(520px, calc(100% - 28px));
+            max-width: none;
+            padding: 18px 22px;
+            border: 2px solid rgba(37, 211, 102, 0.88);
+            border-radius: 8px;
+            background: #0f2f24;
+            box-shadow: 0 18px 46px rgba(15, 47, 36, 0.34);
+            font-size: clamp(18px, 4.2vw, 24px);
+            font-weight: 800;
+            line-height: 1.22;
+        }
+
+        .toast-message.whatsapp-status::after {
+            content: "Aguarde a confirmação nesta tela.";
+            display: block;
+            margin-top: 6px;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: clamp(13px, 3.2vw, 15px);
+            font-weight: 600;
+        }
+
+        .toast-message.whatsapp-status.success {
+            background: #075e46;
+        }
+
+        .toast-message.whatsapp-status.success::after {
+            content: "A foto foi enviada para o número informado.";
+        }
+
+        .toast-message.whatsapp-status.error {
+            border-color: rgba(255, 197, 61, 0.92);
+            background: #4a2812;
+        }
+
+        .toast-message.whatsapp-status.error::after {
+            content: "Use o botão Baixar se precisar salvar agora.";
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                width: min(100% - 18px, 1080px);
+                padding-top: 10px;
+                gap: 10px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .image-container {
+                padding: 8px;
+            }
+
+            .image-container.lead-mode {
+                padding: 12px;
+            }
+
+            .lead-gate {
+                padding: 20px;
+            }
+
+            .button-container {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+            }
+
+            .btn {
+                min-width: 0;
+                min-height: 48px;
+                padding: 0 10px;
+                font-size: 14px;
+            }
+
+            .whatsapp-btn {
+                grid-column: 1 / -1;
+            }
+
+            .button-container.no-whatsapp .whatsapp-btn {
+                grid-column: auto;
+            }
+
+            .whatsapp-dialog {
+                padding: 20px;
+            }
+        }
+
+        @media (max-height: 560px) {
+            .container {
+                gap: 8px;
+                padding-top: 8px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .btn {
+                min-height: 42px;
+            }
+
+            .button-container {
+                gap: 7px;
+            }
+
+            .lead-gate p {
+                margin-bottom: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Realize o seu cadastro para acessar a sua foto</h1>
+        
+        <div class="image-container" id="image-container">
+            <!-- A imagem será inserida aqui via JavaScript -->
+        </div>
+        
+        <div class="button-container" id="button-container" hidden>
+            <button class="btn share-btn" id="share-btn">Compartilhar</button>
+            <button class="btn download-btn" id="download-btn">Baixar</button>
+            <button class="btn whatsapp-btn" id="whatsapp-btn">Receber foto via WhatsApp</button>
+        </div>
+
+        <div class="whatsapp-modal" id="whatsapp-modal" hidden>
+            <form class="whatsapp-dialog" id="whatsapp-form">
+                <h2>Receber foto via WhatsApp</h2>
+                <p>Digite o DDD e o número. Não precisa colocar +55.</p>
+                <label for="whatsapp-phone">WhatsApp</label>
+                <input type="tel" id="whatsapp-phone" name="telefone" inputmode="numeric" autocomplete="tel-national" placeholder="(99) 99999-9999" required>
+                <div class="phone-preview" id="whatsapp-preview">Será enviado como 55DDDNUMERO.</div>
+                <div class="whatsapp-actions">
+                    <button type="button" class="whatsapp-cancel" id="whatsapp-cancel">Cancelar</button>
+                    <button type="submit" class="whatsapp-submit" id="whatsapp-submit">Enviar foto</button>
+                </div>
+                <div class="whatsapp-error" id="whatsapp-error"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Função para adicionar mensagens de debug
+        function addDebug(message) {
+            // Função mantida por compatibilidade, mas não faz nada
+            console.log(message);
+        }
+
+        // Função para mostrar toast de mensagem
+        function showToast(message, duration = 3000, variant = '') {
+            // Remover toast existente se houver
+            const existingToast = document.querySelector('.toast-message');
+            if (existingToast) {
+                document.body.removeChild(existingToast);
+            }
+            
+            // Criar novo toast
+            const toast = document.createElement('div');
+            toast.className = 'toast-message' + (variant ? ' ' + variant : '');
+            toast.textContent = message;
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+            
+            // Mostrar com fade in
+            setTimeout(() => {
+                toast.style.opacity = 1;
+            }, 10);
+            
+            // Esconder após o tempo definido
+            setTimeout(() => {
+                toast.style.opacity = 0;
+                
+                // Remover elemento após fade out
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        // Função para obter parâmetros da URL
+        function getParameterByName(name) {
+            const url = window.location.href;
+            name = name.replace(/[\[\]]/g, '\\$&');
+            const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+            const results = regex.exec(url);
+            
+            if (!results) return null;
+            if (!results[2]) return '';
+            
+            const value = decodeURIComponent(results[2].replace(/\+/g, ' '));
+            addDebug('Parâmetro encontrado: ' + name + '=' + value);
+            return value;
+        }
+
+        // Função para carregar a imagem
+        function loadImage(imageUrl) {
+            addDebug('Tentando carregar imagem: ' + imageUrl);
+            
+            const container = document.getElementById('image-container');
+            container.classList.remove('lead-mode');
+            container.innerHTML = '';
+            const img = document.createElement('img');
+            img.id = 'display-image';
+            
+            img.onload = function() {
+                addDebug('Imagem carregada com sucesso!');
+                addDebug('Dimensões: ' + this.naturalWidth + 'x' + this.naturalHeight);
+                document.title = 'Visualizando: ' + imageUrl.split('/').pop();
+            };
+            
+            img.onerror = function() {
+                addDebug('ERRO: Falha ao carregar a imagem');
+                container.innerHTML = '<div class="error-message">Não foi possível carregar a imagem.<br>Verifique se o URL está correto e acessível.</div>';
+            };
+            
+            img.src = imageUrl;
+            img.alt = 'Imagem carregada';
+            container.appendChild(img);
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+        }
+
+        // Campos padrao: a chave e fixa (vira coluna do leads.csv), o texto e editavel no painel.
+        const LEAD_FIELD_DEFAULTS = {
+            nome: {
+                label: 'Nome',
+                enabled: true,
+                required: true,
+                kind: 'text',
+                type: 'text',
+                autocomplete: 'name',
+                inputmode: '',
+                placeholder: 'Seu nome'
+            },
+            empresa: {
+                label: 'Empresa',
+                enabled: true,
+                required: false,
+                kind: 'text',
+                type: 'text',
+                autocomplete: 'organization',
+                inputmode: '',
+                placeholder: 'Nome da empresa'
+            },
+            telefone: {
+                label: 'WhatsApp',
+                enabled: true,
+                required: true,
+                kind: 'whatsapp',
+                type: 'tel',
+                autocomplete: 'tel-national',
+                inputmode: 'numeric',
+                placeholder: '(99) 99999-9999'
+            },
+            email: {
+                label: 'Email',
+                enabled: true,
+                required: false,
+                kind: 'email',
+                type: 'email',
+                autocomplete: 'email',
+                inputmode: 'email',
+                placeholder: 'seuemail@exemplo.com'
+            }
+        };
+
+        // Campos criados no painel, conforme o tipo escolhido.
+        const LEAD_CUSTOM_TYPES = {
+            text: { type: 'text', autocomplete: 'off', inputmode: '', placeholder: '' },
+            date: { type: 'text', autocomplete: 'off', inputmode: 'numeric', placeholder: 'dd/mm/aaaa' },
+            number: { type: 'text', autocomplete: 'off', inputmode: 'decimal', placeholder: '' },
+            select: { type: 'select', autocomplete: 'off', inputmode: '', placeholder: 'Selecione' }
+        };
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function stripLeadCommas(value) {
+            return String(value || '').replace(/,/g, '');
+        }
+
+        function normalizeLeadFields(status) {
+            // Servidor novo: lista ja ordenada, so com os campos ligados.
+            if (status && Array.isArray(status.leadFieldList)) {
+                return status.leadFieldList
+                    .filter(function(field) {
+                        return field && typeof field.key === 'string' && field.key !== '';
+                    })
+                    .map(function(field) {
+                        const builtin = Object.prototype.hasOwnProperty.call(LEAD_FIELD_DEFAULTS, field.key)
+                            ? LEAD_FIELD_DEFAULTS[field.key]
+                            : null;
+                        const kind = builtin ? builtin.kind : (LEAD_CUSTOM_TYPES[field.type] ? field.type : 'text');
+                        const defaults = builtin || LEAD_CUSTOM_TYPES[kind];
+                        const options = Array.isArray(field.options) ? field.options.map(String) : [];
+
+                        return {
+                            key: field.key,
+                            label: field.label || (builtin ? builtin.label : field.key),
+                            required: field.required === true,
+                            kind: kind === 'select' && options.length === 0 ? 'text' : kind,
+                            type: kind === 'select' && options.length === 0 ? 'text' : defaults.type,
+                            autocomplete: defaults.autocomplete,
+                            inputmode: defaults.inputmode,
+                            placeholder: defaults.placeholder,
+                            options: options
+                        };
+                    });
+            }
+
+            const source = status && status.leadFields && typeof status.leadFields === 'object'
+                ? status.leadFields
+                : {};
+
+            return Object.keys(LEAD_FIELD_DEFAULTS)
+                .map(function(key) {
+                    const defaults = LEAD_FIELD_DEFAULTS[key];
+                    const field = source[key] || {};
+
+                    return {
+                        key: key,
+                        label: field.label || defaults.label,
+                        enabled: Object.prototype.hasOwnProperty.call(field, 'enabled') ? field.enabled !== false : defaults.enabled,
+                        required: Object.prototype.hasOwnProperty.call(field, 'required') ? field.required === true : defaults.required,
+                        kind: defaults.kind,
+                        type: defaults.type,
+                        autocomplete: defaults.autocomplete,
+                        inputmode: defaults.inputmode,
+                        placeholder: defaults.placeholder,
+                        options: []
+                    };
+                })
+                .filter(function(field) {
+                    return field.enabled;
+                });
+        }
+
+        function leadFieldMarkup(field) {
+            const id = 'lead-' + field.key;
+            const requiredText = field.required ? 'Obrigatório' : 'Opcional';
+            const requiredAttr = field.required ? ' required' : '';
+            let control;
+
+            if (field.kind === 'select') {
+                const optionsMarkup = field.options.map(function(option) {
+                    return '<option value="' + escapeHtml(option) + '">' + escapeHtml(option) + '</option>';
+                }).join('');
+
+                control = '<select id="' + escapeHtml(id) + '" name="' + escapeHtml(field.key) + '" data-kind="select"' + requiredAttr + '>'
+                    + '<option value="">' + escapeHtml(field.placeholder || 'Selecione') + '</option>'
+                    + optionsMarkup
+                    + '</select>';
+            } else {
+                const inputmodeAttr = field.inputmode ? ' inputmode="' + escapeHtml(field.inputmode) + '"' : '';
+                const maxlengthAttr = field.kind === 'date' ? ' maxlength="10"' : '';
+
+                control = '<input type="' + escapeHtml(field.type) + '" id="' + escapeHtml(id) + '" name="' + escapeHtml(field.key) + '"'
+                    + ' data-kind="' + escapeHtml(field.kind) + '"'
+                    + ' placeholder="' + escapeHtml(field.placeholder) + '"'
+                    + ' autocomplete="' + escapeHtml(field.autocomplete) + '"'
+                    + inputmodeAttr + maxlengthAttr + requiredAttr + '>';
+            }
+
+            return `
+                <div class="lead-field">
+                    <label for="${escapeHtml(id)}">
+                        <span>${escapeHtml(field.label)}</span>
+                        <small>${requiredText}</small>
+                    </label>
+                    ${control}
+                </div>
+            `;
+        }
+
+        function formatDateInput(value) {
+            const digits = onlyDigits(value).slice(0, 8);
+
+            if (digits.length <= 2) {
+                return digits;
+            }
+
+            if (digits.length <= 4) {
+                return digits.slice(0, 2) + '/' + digits.slice(2);
+            }
+
+            return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+        }
+
+        function isValidLeadDate(value) {
+            const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+            if (!match) {
+                return false;
+            }
+
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const year = parseInt(match[3], 10);
+            const date = new Date(year, month - 1, day);
+
+            return year >= 1900 && year <= 2100
+                && date.getFullYear() === year
+                && date.getMonth() === month - 1
+                && date.getDate() === day;
+        }
+
+        async function saveLead(leadData, imageUrl) {
+            const payload = Object.assign({}, leadData, {
+                imagem: imageUrl
+            });
+
+            const response = await fetch('saveLead.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.ok) {
+                throw new Error(data.message || 'Erro ao salvar o cadastro.');
+            }
+
+            return data;
+        }
+
+        async function getLeadStatus(imageUrl) {
+            const url = new URL('leadStatus.php', window.location.href);
+            url.searchParams.set('imagem', imageUrl);
+            url.searchParams.set('_', String(Date.now()));
+
+            const response = await fetch(url.toString(), {
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store',
+                credentials: 'same-origin'
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.ok) {
+                throw new Error(data.message || 'Nao foi possivel verificar o acesso.');
+            }
+
+            return data;
+        }
+
+        function unlockPhoto(imageUrl, options) {
+            const settings = options || {};
+            const title = document.querySelector('h1');
+            const buttonContainer = document.getElementById('button-container');
+            const whatsappBtn = document.getElementById('whatsapp-btn');
+
+            if (title) {
+                title.textContent = 'Sua foto';
+            }
+
+            loadImage(imageUrl);
+            setupShareButton(imageUrl);
+            setupDownloadButton(imageUrl);
+
+            if (settings.showWhatsAppButton) {
+                whatsappBtn.hidden = false;
+                buttonContainer.classList.remove('no-whatsapp');
+                setupWhatsAppButton(imageUrl, settings.whatsAppPhone || '');
+            } else {
+                whatsappBtn.hidden = true;
+                buttonContainer.classList.add('no-whatsapp');
+            }
+
+            buttonContainer.hidden = false;
+        }
+
+        function setupLoadingState() {
+            const container = document.getElementById('image-container');
+
+            container.classList.add('lead-mode');
+            container.innerHTML = `
+                <section class="lead-gate">
+                    <h2>Verificando acesso</h2>
+                    <p>Aguarde um momento.</p>
+                </section>
+            `;
+        }
+
+        function setupGalleryChoice(imageUrl, status, accessContext) {
+            const container = document.getElementById('image-container');
+
+            container.classList.add('lead-mode');
+            container.innerHTML = `
+                <section class="lead-gate">
+                    <h2>Abrir foto</h2>
+                    <p>Esta foto ainda não tem lead salvo. Como você veio da galeria, pode abrir sem cadastro ou registrar um lead agora.</p>
+                    <div class="choice-actions">
+                        <button type="button" id="open-without-lead" class="secondary-btn">Entrar sem cadastro</button>
+                        <button type="button" id="open-with-lead">Cadastrar lead</button>
+                    </div>
+                    <div class="choice-note">Se abrir sem cadastro, o próximo acesso normal ainda vai pedir lead para esta foto.</div>
+                </section>
+            `;
+
+            document.getElementById('open-without-lead').addEventListener('click', function() {
+                unlockPhoto(imageUrl, {
+                    showWhatsAppButton: true
+                });
+            });
+
+            document.getElementById('open-with-lead').addEventListener('click', function() {
+                setupLeadGate(imageUrl, status, accessContext);
+            });
+        }
+
+        // Botao "Receber foto via WhatsApp": segue a configuracao do evento. Quem
+        // abre pela galeria do painel (equipe logada) sempre tem o botao.
+        function shouldShowWhatsAppButton(status, context) {
+            if (context && context.fromGallery && status && status.galleryAuthorized) {
+                return true;
+            }
+
+            return !status || status.whatsAppButtonEnabled !== false;
+        }
+
+        function setupLeadGate(imageUrl, status, accessContext) {
+            const container = document.getElementById('image-container');
+            const fields = normalizeLeadFields(status);
+            const context = accessContext || {};
+            const fieldMarkup = fields.map(leadFieldMarkup).join('');
+
+            container.classList.add('lead-mode');
+            container.innerHTML = `
+                <form class="lead-gate" id="lead-form">
+                    <h2>Cadastro rapido</h2>
+                    <p>Preencha os dados para liberar o compartilhamento e download.</p>
+                    ${fieldMarkup || '<p>Nenhum campo esta habilitado. Toque no botao para abrir a foto.</p>'}
+                    <button type="submit" id="lead-submit">Concluir cadastro</button>
+                    <div class="lead-error" id="lead-error"></div>
+                </form>
+            `;
+
+            const form = document.getElementById('lead-form');
+            const submit = document.getElementById('lead-submit');
+            const errorBox = document.getElementById('lead-error');
+            const firstInput = form.querySelector('input, select');
+            const telefoneInput = form.querySelector('[name="telefone"]');
+            // Campos numericos aceitam virgula decimal; nos demais a virgula continua bloqueada.
+            const leadInputs = form.querySelectorAll('input:not([data-kind="number"])');
+
+            leadInputs.forEach(function(input) {
+                input.addEventListener('keydown', function(event) {
+                    if (event.key === ',') {
+                        event.preventDefault();
+                    }
+                });
+
+                input.addEventListener('beforeinput', function(event) {
+                    if (event.data === ',') {
+                        event.preventDefault();
+                    }
+                });
+
+                input.addEventListener('input', function() {
+                    const cleaned = stripLeadCommas(input.value);
+                    if (input.value !== cleaned) {
+                        input.value = cleaned;
+                    }
+                });
+            });
+
+            if (telefoneInput) {
+                telefoneInput.addEventListener('input', function() {
+                    telefoneInput.value = formatLocalPhone(telefoneInput.value);
+                });
+            }
+
+            form.querySelectorAll('input[data-kind="date"]').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    input.value = formatDateInput(input.value);
+                });
+            });
+
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const leadData = {};
+                errorBox.style.display = 'none';
+                errorBox.textContent = '';
+
+                function fieldError(message, input) {
+                    errorBox.textContent = message;
+                    errorBox.style.display = 'block';
+                    if (input) {
+                        input.focus();
+                    }
+                }
+
+                for (const field of fields) {
+                    const input = form.querySelector('[name="' + field.key + '"]');
+                    let value = input ? String(input.value || '').trim() : '';
+
+                    if (field.kind !== 'number') {
+                        value = stripLeadCommas(value).trim();
+                    }
+
+                    if (field.kind === 'whatsapp') {
+                        value = localBrazilPhoneDigits(value);
+                    }
+
+                    if (field.kind === 'email') {
+                        value = value.toLowerCase();
+                    }
+
+                    if (field.required && value === '') {
+                        fieldError(field.label + ' obrigatório.', input);
+                        return;
+                    }
+
+                    if (field.kind === 'whatsapp' && value !== '' && !(value.length === 10 || value.length === 11)) {
+                        fieldError('Digite o ' + field.label + ' com DDD.', input);
+                        return;
+                    }
+
+                    if (field.kind === 'email' && value !== '' && !isValidEmail(value)) {
+                        fieldError('Digite um email valido.', input);
+                        return;
+                    }
+
+                    if (field.kind === 'date' && value !== '' && !isValidLeadDate(value)) {
+                        fieldError(field.label + ': digite uma data válida (dd/mm/aaaa).', input);
+                        return;
+                    }
+
+                    if (field.kind === 'number' && value !== '' && !/^-?\d+([.,]\d+)?$/.test(value)) {
+                        fieldError(field.label + ': digite apenas números.', input);
+                        return;
+                    }
+
+                    leadData[field.key] = value;
+                }
+
+                submit.disabled = true;
+                submit.textContent = 'Salvando...';
+
+                try {
+                    // O cadastro so libera a foto; o WhatsApp e enviado apenas
+                    // quando a pessoa toca em "Receber foto via WhatsApp".
+                    await saveLead(leadData, imageUrl);
+                    unlockPhoto(imageUrl, {
+                        showWhatsAppButton: shouldShowWhatsAppButton(status, context),
+                        whatsAppPhone: leadData.telefone || ''
+                    });
+
+                    if (!status || status.autoShareAfterLead !== false) {
+                        await shareImageFile(imageUrl);
+                    }
+                } catch (error) {
+                    errorBox.textContent = error.message || 'Nao foi possivel liberar agora. Tente novamente.';
+                    errorBox.style.display = 'block';
+                    submit.disabled = false;
+                    submit.textContent = 'Concluir cadastro';
+                }
+            });
+
+            if (firstInput) {
+                firstInput.focus();
+            } else {
+                submit.focus();
+            }
+        }
+
+        async function setupAccessFlow(imageUrl) {
+            const fromGallery = getParameterByName('origem') === 'galeria';
+            const accessContext = {
+                fromGallery: fromGallery
+            };
+            let status = null;
+
+            setupLoadingState();
+
+            try {
+                status = await getLeadStatus(imageUrl);
+
+                if (!status.leadEnabled || status.leadExists) {
+                    unlockPhoto(imageUrl, {
+                        showWhatsAppButton: shouldShowWhatsAppButton(status, accessContext)
+                    });
+                    return;
+                }
+
+                if (fromGallery && status.galleryAuthorized && status.galleryWithoutLeadEnabled) {
+                    setupGalleryChoice(imageUrl, status, accessContext);
+                    return;
+                }
+            } catch (error) {
+                addDebug('Nao foi possivel verificar lead: ' + error.message);
+
+                // ==================== CÓDIGO ALTERADO ====================
+                // Sem leadStatus.php no servidor (2026-10-29): mostra a foto
+                // direto, sem cadastro e sem botão do WhatsApp.
+                // Para voltar ao padrão: apague este bloco.
+                unlockPhoto(imageUrl, { showWhatsAppButton: false });
+                return;
+                // ================== FIM DO CÓDIGO ALTERADO ==================
+            }
+
+            setupLeadGate(imageUrl, status, accessContext);
+        }
+
+        function onlyDigits(value) {
+            return String(value || '').replace(/\D+/g, '');
+        }
+
+        function localBrazilPhoneDigits(value) {
+            let digits = onlyDigits(value);
+
+            if (digits.indexOf('55') === 0 && (digits.length === 12 || digits.length === 13)) {
+                digits = digits.slice(2);
+            }
+
+            return digits.slice(0, 11);
+        }
+
+        function phoneForWhapi(value) {
+            const localDigits = localBrazilPhoneDigits(value);
+
+            if (localDigits.length === 10 || localDigits.length === 11) {
+                return '55' + localDigits;
+            }
+
+            return '';
+        }
+
+        function formatLocalPhone(value) {
+            const digits = localBrazilPhoneDigits(value);
+            const ddd = digits.slice(0, 2);
+            const number = digits.slice(2);
+
+            if (digits.length === 0) {
+                return '';
+            }
+
+            if (digits.length === 1) {
+                return '(' + ddd;
+            }
+
+            if (digits.length === 2) {
+                return '(' + ddd + ') ';
+            }
+
+            if (number.length <= 4) {
+                return '(' + ddd + ') ' + number;
+            }
+
+            if (number.length <= 8) {
+                return '(' + ddd + ') ' + number.slice(0, 4) + '-' + number.slice(4);
+            }
+
+            return '(' + ddd + ') ' + number.slice(0, 5) + '-' + number.slice(5, 9);
+        }
+
+        function previewWhapiPhone(value) {
+            const apiPhone = phoneForWhapi(value);
+            if (!apiPhone) {
+                return 'Digite DDD e número, sem +55.';
+            }
+
+            return 'Será enviado pela API como ' + apiPhone + '.';
+        }
+
+        async function sendWhatsAppPhoto(phone, imageUrl) {
+            const response = await fetch('sendWhatsAppPhoto.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    telefone: phone,
+                    imagem: imageUrl
+                })
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.ok) {
+                throw new Error(data.message || 'Nao foi possivel enviar pelo WhatsApp.');
+            }
+
+            return data;
+        }
+
+        function closeWhatsAppModal() {
+            document.getElementById('whatsapp-modal').hidden = true;
+        }
+
+        // phone: numero digitado no cadastro, ja preenchido no quadro (a pessoa pode trocar).
+        function openWhatsAppModal(imageUrl, phone) {
+            const modal = document.getElementById('whatsapp-modal');
+            const form = document.getElementById('whatsapp-form');
+            const input = document.getElementById('whatsapp-phone');
+            const preview = document.getElementById('whatsapp-preview');
+            const errorBox = document.getElementById('whatsapp-error');
+            const submit = document.getElementById('whatsapp-submit');
+
+            form.dataset.imageUrl = imageUrl;
+            input.value = phone ? formatLocalPhone(phone) : '';
+            preview.textContent = phone ? previewWhapiPhone(input.value) : 'Será enviado como 55DDDNUMERO.';
+            errorBox.style.display = 'none';
+            errorBox.textContent = '';
+            submit.disabled = false;
+            submit.textContent = 'Enviar foto';
+            modal.hidden = false;
+            input.focus();
+        }
+
+        function setupWhatsAppButton(imageUrl, phone) {
+            const whatsappBtn = document.getElementById('whatsapp-btn');
+            const modal = document.getElementById('whatsapp-modal');
+            const form = document.getElementById('whatsapp-form');
+            const input = document.getElementById('whatsapp-phone');
+            const preview = document.getElementById('whatsapp-preview');
+            const errorBox = document.getElementById('whatsapp-error');
+            const submit = document.getElementById('whatsapp-submit');
+            const cancel = document.getElementById('whatsapp-cancel');
+
+            whatsappBtn.dataset.imageUrl = imageUrl;
+            whatsappBtn.dataset.phone = phone || '';
+
+            if (!whatsappBtn.dataset.bound) {
+                whatsappBtn.dataset.bound = '1';
+                whatsappBtn.addEventListener('click', function() {
+                    openWhatsAppModal(whatsappBtn.dataset.imageUrl || imageUrl, whatsappBtn.dataset.phone || '');
+                });
+            }
+
+            if (form.dataset.bound) {
+                return;
+            }
+
+            form.dataset.bound = '1';
+
+            input.addEventListener('input', function() {
+                input.value = formatLocalPhone(input.value);
+                preview.textContent = previewWhapiPhone(input.value);
+                errorBox.style.display = 'none';
+                errorBox.textContent = '';
+            });
+
+            cancel.addEventListener('click', function() {
+                closeWhatsAppModal();
+            });
+
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeWhatsAppModal();
+                }
+            });
+
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const phone = phoneForWhapi(input.value);
+                if (!phone) {
+                    errorBox.textContent = 'Digite o DDD e o numero do WhatsApp.';
+                    errorBox.style.display = 'block';
+                    input.focus();
+                    return;
+                }
+
+                submit.disabled = true;
+                submit.textContent = 'Enviando...';
+                errorBox.style.display = 'none';
+                errorBox.textContent = '';
+
+                try {
+                    await sendWhatsAppPhoto(phone, form.dataset.imageUrl || imageUrl);
+                    closeWhatsAppModal();
+                    showToast('Foto enviada pelo WhatsApp.');
+                } catch (error) {
+                    errorBox.textContent = error.message;
+                    errorBox.style.display = 'block';
+                    submit.disabled = false;
+                    submit.textContent = 'Enviar foto';
+                }
+            });
+        }
+
+        async function shareImageFile(imageUrl) {
+            if (!navigator.share) {
+                showToast("Seu navegador não suporta compartilhamento. Tente salvar a imagem e compartilhar manualmente.");
+                return false;
+            }
+
+            showToast("Preparando imagem...");
+
+            try {
+                const response = await fetch(imageUrl, {
+                    cache: 'no-cache',
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP! Status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                let fileType = blob.type;
+
+                if (!fileType || fileType === 'application/octet-stream') {
+                    const extension = imageUrl.split('.').pop().toLowerCase();
+                    if (extension === 'jpg' || extension === 'jpeg') fileType = 'image/jpeg';
+                    else if (extension === 'png') fileType = 'image/png';
+                    else if (extension === 'webp') fileType = 'image/webp';
+                    else fileType = 'image/jpeg';
+                }
+
+                let fileName = imageUrl.split('/').pop() || 'image';
+                if (!fileName.includes('.')) {
+                    fileName += '.jpg';
+                }
+
+                const file = new File([blob], fileName, {
+                    type: fileType,
+                    lastModified: new Date().getTime()
+                });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file] });
+                    return true;
+                }
+
+                throw new Error('Compartilhamento de arquivos não suportado');
+            } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    return false;
+                }
+
+                console.error('Metodo direto de compartilhamento falhou:', error);
+            }
+
+            try {
+                const img = document.getElementById('display-image');
+                if (!img || !img.complete || img.naturalWidth === 0) {
+                    throw new Error('Imagem nao esta pronta ou nao foi carregada');
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(
+                        (canvasBlob) => canvasBlob ? resolve(canvasBlob) : reject(new Error('Falha ao criar blob')),
+                        'image/jpeg',
+                        0.95
+                    );
+                });
+
+                const file = new File([blob], 'imagem.jpg', {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file] });
+                    return true;
+                }
+
+                throw new Error('Compartilhamento de arquivos nao suportado');
+            } catch (error) {
+                if (!error || error.name !== 'AbortError') {
+                    console.error('Nao foi possivel compartilhar a imagem:', error);
+                    showToast("Não foi possível compartilhar a imagem. Toque em Compartilhar para tentar novamente.");
+                }
+            }
+
+            return false;
+        }
+
+        // Configurar o botão de compartilhamento - foco exclusivo no compartilhamento da imagem
+        function setupShareButton(imageUrl) {
+            const shareBtn = document.getElementById('share-btn');
+            shareBtn.dataset.imageUrl = imageUrl;
+
+            if (shareBtn.dataset.bound) {
+                return;
+            }
+
+            shareBtn.dataset.bound = '1';
+            shareBtn.addEventListener('click', async function() {
+                await shareImageFile(shareBtn.dataset.imageUrl || imageUrl);
+            });
+        }
+
+        // Configurar o botão de download
+        function setupDownloadButton(imageUrl) {
+            const downloadBtn = document.getElementById('download-btn');
+            
+            downloadBtn.addEventListener('click', async function() {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const isAndroid = /android/i.test(navigator.userAgent);
+                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    if (isIOS) {
+                        // Para iOS, mostrar instruções sem abrir nova janela
+                        showIOSInstructions();
+                    } else if (isAndroid) {
+                        // Para Android, fazer download direto sem compartilhamento
+                        try {
+                            showToast("Baixando imagem...");
+                            
+                            // Baixar a imagem como blob
+                            const response = await fetch(imageUrl);
+                            const blob = await response.blob();
+                            
+                            // Fazer download direto
+                            downloadImageAndroid(blob);
+                            
+                            showToast("Download iniciado!");
+                        } catch (error) {
+                            console.error('Erro ao preparar imagem para download:', error);
+                            showToast("Erro ao baixar. Tente novamente.");
+                            // Método alternativo
+                            downloadImageAndroid(null);
+                        }
+                    }
+                } else {
+                    // Em desktop, criar um link de download direto
+                    const link = document.createElement('a');
+                    link.href = imageUrl;
+                    link.download = imageUrl.split('/').pop() || 'imagem.jpg';
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                
+                // Função para mostrar instruções de download no iOS
+                function showIOSInstructions() {
+                    // Criar o modal de instruções
+                    const modalOverlay = document.createElement('div');
+                    modalOverlay.style.position = 'fixed';
+                    modalOverlay.style.top = '0';
+                    modalOverlay.style.left = '0';
+                    modalOverlay.style.width = '100%';
+                    modalOverlay.style.height = '100%';
+                    modalOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                    modalOverlay.style.display = 'flex';
+                    modalOverlay.style.justifyContent = 'center';
+                    modalOverlay.style.alignItems = 'center';
+                    modalOverlay.style.zIndex = '1000';
+                    
+                    const modalContent = document.createElement('div');
+                    modalContent.style.backgroundColor = 'white';
+                    modalContent.style.padding = '20px';
+                    modalContent.style.borderRadius = '10px';
+                    modalContent.style.maxWidth = '90%';
+                    modalContent.style.width = '350px';
+                    modalContent.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                    
+                    modalContent.innerHTML = `
+                        <h3 style="margin-top: 0; margin-bottom: 15px; color: #333;">Como salvar no iOS</h3>
+                        <ol style="padding-left: 20px; margin-bottom: 20px;">
+                            <li style="margin-bottom: 8px;">Pressione e mantenha o dedo sobre a imagem</li>
+                            <li style="margin-bottom: 8px;">No menu que aparecer, selecione "Salvar no App Fotos"</li>
+                            <li>A imagem será salva em sua galeria</li>
+                        </ol>
+                        <button id="close-modal" style="display: block; width: 100%; padding: 10px; background-color: #009688; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">Entendi</button>
+                    `;
+                    
+                    modalOverlay.appendChild(modalContent);
+                    document.body.appendChild(modalOverlay);
+                    
+                    // Adicionar evento para fechar o modal
+                    document.getElementById('close-modal').addEventListener('click', function() {
+                        document.body.removeChild(modalOverlay);
+                    });
+                }
+                
+                // Função alternativa para download no Android
+                function downloadImageAndroid(blob) {
+                    if (blob) {
+                        // Usar o objeto URL para criar uma URL temporária
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        // Criar o link de download com nome mais descritivo
+                        const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_');
+                        const fileName = `imagem_${timestamp}.jpg`;
+                        
+                        const link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.download = fileName;
+                        link.style.display = 'none';
+                        
+                        // Adicionar à página e clicar
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        // Limpar recursos
+                        setTimeout(() => {
+                            if (document.body.contains(link)) {
+                                document.body.removeChild(link);
+                            }
+                            URL.revokeObjectURL(blobUrl);
+                        }, 100);
+                        
+                        console.log('Download iniciado:', fileName);
+                    } else {
+                        // Se não tiver blob, tentar diretamente com a URL
+                        const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_');
+                        const fileName = imageUrl.split('/').pop() || `imagem_${timestamp}.jpg`;
+                        
+                        const link = document.createElement('a');
+                        link.href = imageUrl;
+                        link.download = fileName;
+                        link.style.display = 'none';
+                        link.target = '_blank'; // Abrir em nova aba como fallback
+                        
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        setTimeout(() => {
+                            if (document.body.contains(link)) {
+                                document.body.removeChild(link);
+                            }
+                        }, 100);
+                        
+                        console.log('Download direto iniciado:', fileName);
+                    }
+                }
+            });
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            addDebug('Página carregada. Buscando parâmetros da URL...');
+            addDebug('URL atual: ' + window.location.href);
+            
+            // Obter o parâmetro 'imagem' da URL
+            const imageUrl = getParameterByName('imagem');
+            
+            if (imageUrl) {
+                setupAccessFlow(imageUrl);
+            } else {
+                addDebug('ERRO: Nenhum parâmetro de imagem encontrado');
+                const container = document.getElementById('image-container');
+                container.innerHTML = `
+                    <div class="error-message">
+                        <p>Nenhuma imagem especificada.</p>
+                        <p>Use o parâmetro "imagem" na URL.</p>
+                        <p>Exemplo: <code>?imagem=https://exemplo.com/imagem.jpg</code></p>
+                    </div>
+                `;
+                
+                // Desativar os botões
+                document.getElementById('share-btn').disabled = true;
+                document.getElementById('download-btn').disabled = true;
+                document.getElementById('whatsapp-btn').disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>
